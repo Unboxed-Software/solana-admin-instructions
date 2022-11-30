@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("29KLUpcQ1EHYqN3wqBkmo7o2T7xfhESpTKy6eEp9krNU");
 
 #[cfg(feature = "test-mint")]
 pub mod constants {
@@ -33,6 +33,14 @@ pub mod config {
         }
         Ok(())
     }
+
+    pub fn set_admin_settings(
+        ctx: Context<SetAdminSettingsUseProgramState>,
+        admin_data: u64,
+    ) -> Result<()> {
+        ctx.accounts.settings.admin_data = admin_data;
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -52,4 +60,26 @@ pub struct Initialize<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct SetAdminSettingsUseProgramState<'info> {
+    #[account(init, seeds = [b"admin"], bump, payer = authority, space = Settings::LEN + 8)]
+    pub settings: Account<'info, Settings>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(constraint = program.programdata_address()? == Some(program_data.key()))]
+    pub program: Program<'info, crate::program::Config>,
+    #[account(constraint = program_data.upgrade_authority_address == Some(authority.key()))]
+    pub program_data: Account<'info, ProgramData>,
+    pub system_program: Program<'info, System>,
+}
+
+#[account]
+pub struct Settings {
+    admin_data: u64,
+}
+
+impl Settings {
+    pub const LEN: usize = 8;
 }
