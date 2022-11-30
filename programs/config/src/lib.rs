@@ -25,4 +25,8 @@ pub mod config {
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         instructions::initialize_handler(ctx)
     }
+
+    pub fn payment(ctx: Context<Payment>, amount: u64) -> Result<()> {
+        instructions::payment_handler(ctx, amount)
+    }
 }

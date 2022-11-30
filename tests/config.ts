@@ -30,8 +30,14 @@ describe("config", () => {
   )[0]
 
   const tokenAccount = anchor.web3.Keypair.generate()
+
+  const sender = anchor.web3.Keypair.generate()
+  const receiver = anchor.web3.Keypair.generate()
+
   let mint: anchor.web3.PublicKey
   let feeDestination: anchor.web3.PublicKey
+  let senderTokenAccount: anchor.web3.PublicKey
+  let receiverTokenAccount: anchor.web3.PublicKey
 
   before(async () => {
     let rawdata = fs.readFileSync(
@@ -56,21 +62,52 @@ describe("config", () => {
       wallet.publicKey
     )
 
+    senderTokenAccount = await spl.createAccount(
+      connection,
+      wallet.payer,
+      mint,
+      sender.publicKey
+    )
+
+    receiverTokenAccount = await spl.createAccount(
+      connection,
+      wallet.payer,
+      mint,
+      receiver.publicKey
+    )
+
+    await spl.mintTo(
+      connection,
+      wallet.payer,
+      mint,
+      senderTokenAccount,
+      wallet.payer,
+      10000
+    )
+
+    await connection.confirmTransaction(
+      await connection.requestAirdrop(
+        sender.publicKey,
+        1 * anchor.web3.LAMPORTS_PER_SOL
+      ),
+      "confirmed"
+    )
+
     deploy()
   })
 
-  it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.methods
-      .initialize()
-      .accounts({
-        token: tokenAccount.publicKey,
-        mint: mint,
-      })
-      .signers([tokenAccount])
-      .rpc()
-    // console.log("Your transaction signature", tx)
-  })
+  // it("Is initialized!", async () => {
+  //   // Add your test here.
+  //   const tx = await program.methods
+  //     .initialize()
+  //     .accounts({
+  //       token: tokenAccount.publicKey,
+  //       mint: mint,
+  //     })
+  //     .signers([tokenAccount])
+  //     .rpc()
+  //   // console.log("Your transaction signature", tx)
+  // })
 
   it("Reads ProgramData and sets field", async () => {
     const tx = await program.methods
@@ -94,6 +131,38 @@ describe("config", () => {
     assert.strictEqual(
       (await program.account.adminConfig.fetch(adminConfig)).admin.toString(),
       wallet.publicKey.toString()
+    )
+  })
+
+  it("Payment", async () => {
+    const tx = await program.methods
+      .payment(new anchor.BN(10000))
+      .accounts({
+        adminConfig: adminConfig,
+        feeDestination: feeDestination,
+        senderTokenAccount: senderTokenAccount,
+        receiverTokenAccount: receiverTokenAccount,
+        sender: sender.publicKey,
+      })
+      .transaction()
+
+    await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
+
+    assert.strictEqual(
+      (await connection.getTokenAccountBalance(senderTokenAccount)).value
+        .uiAmount,
+      0
+    )
+
+    assert.strictEqual(
+      (await connection.getTokenAccountBalance(feeDestination)).value.uiAmount,
+      100
+    )
+
+    assert.strictEqual(
+      (await connection.getTokenAccountBalance(receiverTokenAccount)).value
+        .uiAmount,
+      9900
     )
   })
 })
