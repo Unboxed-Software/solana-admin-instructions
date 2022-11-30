@@ -24,59 +24,76 @@ describe("config", () => {
     new anchor.web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
   )[0]
 
-  const settings = findProgramAddressSync(
+  const adminConfig = findProgramAddressSync(
     [Buffer.from("admin")],
     program.programId
   )[0]
 
   const tokenAccount = anchor.web3.Keypair.generate()
   let mint: anchor.web3.PublicKey
+  let feeDestination: anchor.web3.PublicKey
 
   before(async () => {
-    // let rawdata = fs.readFileSync(
-    //   "tests/keys/test-WaoKNLQVDyBx388CfjaVeyNbs3MT2mPgAhoCfXyUvg8.json"
-    // )
-    // let keyData = JSON.parse(rawdata)
-    // let key = anchor.web3.Keypair.fromSecretKey(new Uint8Array(keyData))
-    // mint = await spl.createMint(
-    //   connection,
-    //   wallet.payer,
-    //   wallet.publicKey,
-    //   null,
-    //   0,
-    //   key
-    // )
+    let rawdata = fs.readFileSync(
+      "tests/keys/test-WaoKNLQVDyBx388CfjaVeyNbs3MT2mPgAhoCfXyUvg8.json"
+    )
+    let keyData = JSON.parse(rawdata)
+    let key = anchor.web3.Keypair.fromSecretKey(new Uint8Array(keyData))
+
+    mint = await spl.createMint(
+      connection,
+      wallet.payer,
+      wallet.publicKey,
+      null,
+      0,
+      key
+    )
+
+    feeDestination = await spl.createAccount(
+      connection,
+      wallet.payer,
+      mint,
+      wallet.publicKey
+    )
+
     deploy()
   })
 
-  // it("Is initialized!", async () => {
-  //   // Add your test here.
-  //   const tx = await program.methods
-  //     .initialize()
-  //     .accounts({
-  //       token: tokenAccount.publicKey,
-  //       mint: mint,
-  //     })
-  //     .signers([tokenAccount])
-  //     .rpc()
-  //   // console.log("Your transaction signature", tx)
-  // })
+  it("Is initialized!", async () => {
+    // Add your test here.
+    const tx = await program.methods
+      .initialize()
+      .accounts({
+        token: tokenAccount.publicKey,
+        mint: mint,
+      })
+      .signers([tokenAccount])
+      .rpc()
+    // console.log("Your transaction signature", tx)
+  })
 
   it("Reads ProgramData and sets field", async () => {
     const tx = await program.methods
-      .setAdminSettings(new anchor.BN(500))
+      .initializeAdminConfig()
       .accounts({
+        adminConfig: adminConfig,
+        feeDestination: feeDestination,
         authority: wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-        programData: programDataAddress,
         program: program.programId,
-        settings: settings,
+        programData: programDataAddress,
+        systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc()
 
     assert.strictEqual(
-      (await program.account.settings.fetch(settings)).adminData.toNumber(),
-      500
+      (
+        await program.account.adminConfig.fetch(adminConfig)
+      ).feeBasisPoints.toNumber(),
+      100
+    )
+    assert.strictEqual(
+      (await program.account.adminConfig.fetch(adminConfig)).admin.toString(),
+      wallet.publicKey.toString()
     )
   })
 })
