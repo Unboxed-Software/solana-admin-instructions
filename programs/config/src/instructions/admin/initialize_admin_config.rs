@@ -1,5 +1,6 @@
 use crate::program::Config;
 use crate::state::AdminConfig;
+use crate::USDC_MINT_PUBKEY;
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
@@ -7,7 +8,7 @@ use anchor_spl::token::TokenAccount;
 pub struct InitializeAdminConfig<'info> {
     #[account(init, seeds = [b"admin"], bump, payer = authority, space = AdminConfig::LEN)]
     pub admin_config: Account<'info, AdminConfig>,
-    #[account()]
+    #[account( token::mint = USDC_MINT_PUBKEY)]
     pub fee_destination: Account<'info, TokenAccount>,
     #[account(mut)]
     pub authority: Signer<'info>,

@@ -1,7 +1,7 @@
 use crate::state::AdminConfig;
 use crate::USDC_MINT_PUBKEY;
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount};
+use anchor_spl::token::{self, Token, TokenAccount};
 
 #[derive(Accounts)]
 pub struct Payment<'info> {
@@ -11,11 +11,20 @@ pub struct Payment<'info> {
         has_one = fee_destination
     )]
     pub admin_config: Account<'info, AdminConfig>,
-    #[account(mut)]
+    #[account(
+        mut,
+        token::mint = USDC_MINT_PUBKEY
+    )]
     pub fee_destination: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+        mut,
+        token::mint = USDC_MINT_PUBKEY
+    )]
     pub sender_token_account: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+        mut,
+        token::mint = USDC_MINT_PUBKEY
+    )]
     pub receiver_token_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
     #[account(mut)]
@@ -32,7 +41,7 @@ pub fn payment_handler(ctx: Context<Payment>, amount: u64) -> Result<()> {
 
     msg!("Amount: {}", amount);
     msg!("Fee Amount: {}", fee_amount);
-    msg!("Remaining Amount: {}", remaining_amount);
+    msg!("Remaining Transfer Amount: {}", remaining_amount);
 
     token::transfer(
         CpiContext::new(

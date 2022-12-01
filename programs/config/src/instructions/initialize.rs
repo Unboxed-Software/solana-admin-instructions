@@ -1,4 +1,3 @@
-// use crate::constants::USDC_MINT_PUBKEY;
 use crate::USDC_MINT_PUBKEY;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
@@ -13,7 +12,6 @@ pub struct Initialize<'info> {
     )]
     pub token: Account<'info, TokenAccount>,
     #[account(address = USDC_MINT_PUBKEY)]
-    // #[account(address = constants::MINT_PUBKEY.parse::<Pubkey>().unwrap())]
     pub mint: Account<'info, Mint>,
     #[account(mut)]
     pub payer: Signer<'info>,

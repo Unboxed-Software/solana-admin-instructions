@@ -3,7 +3,7 @@ import * as spl from "@solana/spl-token"
 import { Program } from "@project-serum/anchor"
 import { Config } from "../target/types/config"
 import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pubkey"
-import { assert } from "chai"
+import { assert, expect } from "chai"
 import { execSync } from "child_process"
 const fs = require("fs")
 
@@ -109,7 +109,7 @@ describe("config", () => {
   //   // console.log("Your transaction signature", tx)
   // })
 
-  it("Reads ProgramData and sets field", async () => {
+  it("Initialize Admin", async () => {
     const tx = await program.methods
       .initializeAdminConfig()
       .accounts({
@@ -135,34 +135,73 @@ describe("config", () => {
   })
 
   it("Payment", async () => {
+    try {
+      const tx = await program.methods
+        .payment(new anchor.BN(10000))
+        .accounts({
+          adminConfig: adminConfig,
+          feeDestination: feeDestination,
+          senderTokenAccount: senderTokenAccount,
+          receiverTokenAccount: receiverTokenAccount,
+          sender: sender.publicKey,
+        })
+        .transaction()
+
+      await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
+
+      assert.strictEqual(
+        (await connection.getTokenAccountBalance(senderTokenAccount)).value
+          .uiAmount,
+        0
+      )
+
+      assert.strictEqual(
+        (await connection.getTokenAccountBalance(feeDestination)).value
+          .uiAmount,
+        100
+      )
+
+      assert.strictEqual(
+        (await connection.getTokenAccountBalance(receiverTokenAccount)).value
+          .uiAmount,
+        9900
+      )
+    } catch (err) {
+      console.log(err)
+    }
+  })
+
+  it("Update Admin Config", async () => {
     const tx = await program.methods
-      .payment(new anchor.BN(10000))
+      .updateAdminConfig(new anchor.BN(200))
       .accounts({
         adminConfig: adminConfig,
-        feeDestination: feeDestination,
-        senderTokenAccount: senderTokenAccount,
-        receiverTokenAccount: receiverTokenAccount,
-        sender: sender.publicKey,
+        admin: wallet.publicKey,
       })
-      .transaction()
-
-    await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
+      .rpc()
 
     assert.strictEqual(
-      (await connection.getTokenAccountBalance(senderTokenAccount)).value
-        .uiAmount,
-      0
+      (
+        await program.account.adminConfig.fetch(adminConfig)
+      ).feeBasisPoints.toNumber(),
+      200
     )
+  })
 
-    assert.strictEqual(
-      (await connection.getTokenAccountBalance(feeDestination)).value.uiAmount,
-      100
-    )
+  it("Update Admin Config - expect fail", async () => {
+    try {
+      const tx = await program.methods
+        .updateAdminConfig(new anchor.BN(300))
+        .accounts({
+          adminConfig: adminConfig,
+          admin: sender.publicKey,
+        })
+        .transaction()
 
-    assert.strictEqual(
-      (await connection.getTokenAccountBalance(receiverTokenAccount)).value
-        .uiAmount,
-      9900
-    )
+      await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
+    } catch (err) {
+      expect(err)
+      // console.log(err)
+    }
   })
 })
