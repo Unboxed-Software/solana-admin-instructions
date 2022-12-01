@@ -96,19 +96,6 @@ describe("config", () => {
     deploy()
   })
 
-  // it("Is initialized!", async () => {
-  //   // Add your test here.
-  //   const tx = await program.methods
-  //     .initialize()
-  //     .accounts({
-  //       token: tokenAccount.publicKey,
-  //       mint: mint,
-  //     })
-  //     .signers([tokenAccount])
-  //     .rpc()
-  //   // console.log("Your transaction signature", tx)
-  // })
-
   it("Initialize Admin", async () => {
     const tx = await program.methods
       .initializeAdminConfig()
