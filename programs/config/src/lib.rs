@@ -4,7 +4,7 @@ mod instructions;
 mod state;
 use instructions::*;
 
-declare_id!("G839pmstFmKKGEVXRGnauXxFgzucvELrzuyk6gHTiK7a");
+declare_id!("3D4TTrhnPhV3ULrjEZ9xeaQHUN776KMzMGGB2Pp5H8bB");
 
 #[cfg(feature = "local-testing")]
 #[constant]
@@ -15,7 +15,7 @@ pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("WaoKNLQVDyBx388CfjaVeyNbs3MT2mPgAh
 pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 #[constant]
-pub const ADMIN_PUBKEY: Pubkey = pubkey!("DfLZV18rD7wCQwjYvhTFwuvLh49WSbXFeJFPQb5czifH");
+pub const ADMIN_PUBKEY: Pubkey = pubkey!("CkqtYErfRwYUen6ojKcrQWAJ19GjzWc7AEbANsRs2dxD");
 
 #[program]
 pub mod config {
