@@ -39,7 +39,7 @@ describe("config", () => {
 
   before(async () => {
     let rawdata = fs.readFileSync(
-      "tests/keys/test-WaoKNLQVDyBx388CfjaVeyNbs3MT2mPgAhoCfXyUvg8.json"
+      "tests/keys/envgiPXWwmpkHFKdy4QLv2cypgAWmVTVEm71YbNpYRu.json"
     )
     let keyData = JSON.parse(rawdata)
     let key = anchor.web3.Keypair.fromSecretKey(new Uint8Array(keyData))
