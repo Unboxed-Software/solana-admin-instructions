@@ -1,13 +1,14 @@
 use crate::program::Config;
-use crate::state::AdminConfig;
+use crate::state::ProgramConfig;
+use crate::SEED_PROGRAM_CONFIG;
 use crate::USDC_MINT_PUBKEY;
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
 #[derive(Accounts)]
-pub struct InitializeAdminConfig<'info> {
-    #[account(init, seeds = [b"admin"], bump, payer = authority, space = AdminConfig::LEN)]
-    pub admin_config: Account<'info, AdminConfig>,
+pub struct InitializeProgramConfig<'info> {
+    #[account(init, seeds = [SEED_PROGRAM_CONFIG], bump, payer = authority, space = ProgramConfig::LEN)]
+    pub program_config: Account<'info, ProgramConfig>,
     #[account( token::mint = USDC_MINT_PUBKEY)]
     pub fee_destination: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -19,9 +20,9 @@ pub struct InitializeAdminConfig<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn initialize_admin_config_handler(ctx: Context<InitializeAdminConfig>) -> Result<()> {
-    ctx.accounts.admin_config.admin = ctx.accounts.authority.key();
-    ctx.accounts.admin_config.fee_destination = ctx.accounts.fee_destination.key();
-    ctx.accounts.admin_config.fee_basis_points = 100;
+pub fn initialize_program_config_handler(ctx: Context<InitializeProgramConfig>) -> Result<()> {
+    ctx.accounts.program_config.admin = ctx.accounts.authority.key();
+    ctx.accounts.program_config.fee_destination = ctx.accounts.fee_destination.key();
+    ctx.accounts.program_config.fee_basis_points = 100;
     Ok(())
 }

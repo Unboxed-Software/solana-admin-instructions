@@ -24,12 +24,10 @@ describe("config", () => {
     new anchor.web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
   )[0]
 
-  const adminConfig = findProgramAddressSync(
-    [Buffer.from("admin")],
+  const programConfig = findProgramAddressSync(
+    [Buffer.from("program_config")],
     program.programId
   )[0]
-
-  const tokenAccount = anchor.web3.Keypair.generate()
 
   const sender = anchor.web3.Keypair.generate()
   const receiver = anchor.web3.Keypair.generate()
@@ -96,11 +94,11 @@ describe("config", () => {
     deploy()
   })
 
-  it("Initialize Admin", async () => {
+  it("Initialize Program Config Account", async () => {
     const tx = await program.methods
-      .initializeAdminConfig()
+      .initializeProgramConfig()
       .accounts({
-        adminConfig: adminConfig,
+        programConfig: programConfig,
         feeDestination: feeDestination,
         authority: wallet.publicKey,
         program: program.programId,
@@ -111,12 +109,14 @@ describe("config", () => {
 
     assert.strictEqual(
       (
-        await program.account.adminConfig.fetch(adminConfig)
+        await program.account.programConfig.fetch(programConfig)
       ).feeBasisPoints.toNumber(),
       100
     )
     assert.strictEqual(
-      (await program.account.adminConfig.fetch(adminConfig)).admin.toString(),
+      (
+        await program.account.programConfig.fetch(programConfig)
+      ).admin.toString(),
       wallet.publicKey.toString()
     )
   })
@@ -126,7 +126,7 @@ describe("config", () => {
       const tx = await program.methods
         .payment(new anchor.BN(10000))
         .accounts({
-          adminConfig: adminConfig,
+          programConfig: programConfig,
           feeDestination: feeDestination,
           senderTokenAccount: senderTokenAccount,
           receiverTokenAccount: receiverTokenAccount,
@@ -158,29 +158,29 @@ describe("config", () => {
     }
   })
 
-  it("Update Admin Config", async () => {
+  it("Update Program Config Account Fee", async () => {
     const tx = await program.methods
-      .updateAdminConfig(new anchor.BN(200))
+      .updateProgramConfigFee(new anchor.BN(200))
       .accounts({
-        adminConfig: adminConfig,
+        programConfig: programConfig,
         admin: wallet.publicKey,
       })
       .rpc()
 
     assert.strictEqual(
       (
-        await program.account.adminConfig.fetch(adminConfig)
+        await program.account.programConfig.fetch(programConfig)
       ).feeBasisPoints.toNumber(),
       200
     )
   })
 
-  it("Update Admin Config - expect fail", async () => {
+  it("Update Program Config Account Fee - expect fail", async () => {
     try {
       const tx = await program.methods
-        .updateAdminConfig(new anchor.BN(300))
+        .updateProgramConfigFee(new anchor.BN(300))
         .accounts({
-          adminConfig: adminConfig,
+          programConfig: programConfig,
           admin: sender.publicKey,
         })
         .transaction()

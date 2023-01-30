@@ -1,4 +1,5 @@
-use crate::state::AdminConfig;
+use crate::state::ProgramConfig;
+use crate::SEED_PROGRAM_CONFIG;
 use crate::USDC_MINT_PUBKEY;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount};
@@ -6,11 +7,11 @@ use anchor_spl::token::{self, Token, TokenAccount};
 #[derive(Accounts)]
 pub struct Payment<'info> {
     #[account(
-        seeds = [b"admin"],
+        seeds = [SEED_PROGRAM_CONFIG],
         bump,
         has_one = fee_destination
     )]
-    pub admin_config: Account<'info, AdminConfig>,
+    pub program_config: Account<'info, ProgramConfig>,
     #[account(
         mut,
         token::mint = USDC_MINT_PUBKEY
@@ -33,7 +34,7 @@ pub struct Payment<'info> {
 
 pub fn payment_handler(ctx: Context<Payment>, amount: u64) -> Result<()> {
     let fee_amount = amount
-        .checked_mul(ctx.accounts.admin_config.fee_basis_points)
+        .checked_mul(ctx.accounts.program_config.fee_basis_points)
         .unwrap()
         .checked_div(10000)
         .unwrap();
