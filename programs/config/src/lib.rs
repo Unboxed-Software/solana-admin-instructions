@@ -3,7 +3,7 @@ use solana_program::{pubkey, pubkey::Pubkey};
 mod instructions;
 use instructions::*;
 
-declare_id!("HUzG1co6AAcCwZb68RLF8jFZr6rNPQJKvkoUoYmnPmdy");
+declare_id!("DWiwuFozPXHW4KA5ijwcDgY88kJeXZ7WNUjfxZ6L4pJU");
 
 pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("envgiPXWwmpkHFKdy4QLv2cypgAWmVTVEm71YbNpYRu");
 
