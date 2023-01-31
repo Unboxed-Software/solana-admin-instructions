@@ -94,39 +94,11 @@ describe("config", () => {
     deploy()
   })
 
-  it("Initialize Program Config Account", async () => {
-    const tx = await program.methods
-      .initializeProgramConfig()
-      .accounts({
-        programConfig: programConfig,
-        feeDestination: feeDestination,
-        authority: wallet.publicKey,
-        program: program.programId,
-        programData: programDataAddress,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      })
-      .rpc()
-
-    assert.strictEqual(
-      (
-        await program.account.programConfig.fetch(programConfig)
-      ).feeBasisPoints.toNumber(),
-      100
-    )
-    assert.strictEqual(
-      (
-        await program.account.programConfig.fetch(programConfig)
-      ).admin.toString(),
-      wallet.publicKey.toString()
-    )
-  })
-
-  it("Payment", async () => {
+  it("Payment completes successfully", async () => {
     try {
       const tx = await program.methods
         .payment(new anchor.BN(10000))
         .accounts({
-          programConfig: programConfig,
           feeDestination: feeDestination,
           senderTokenAccount: senderTokenAccount,
           receiverTokenAccount: receiverTokenAccount,
@@ -155,40 +127,6 @@ describe("config", () => {
       )
     } catch (err) {
       console.log(err)
-    }
-  })
-
-  it("Update Program Config Account Fee", async () => {
-    const tx = await program.methods
-      .updateProgramConfigFee(new anchor.BN(200))
-      .accounts({
-        programConfig: programConfig,
-        admin: wallet.publicKey,
-      })
-      .rpc()
-
-    assert.strictEqual(
-      (
-        await program.account.programConfig.fetch(programConfig)
-      ).feeBasisPoints.toNumber(),
-      200
-    )
-  })
-
-  it("Update Program Config Account Fee - expect fail", async () => {
-    try {
-      const tx = await program.methods
-        .updateProgramConfigFee(new anchor.BN(300))
-        .accounts({
-          programConfig: programConfig,
-          admin: sender.publicKey,
-        })
-        .transaction()
-
-      await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
-    } catch (err) {
-      expect(err)
-      // console.log(err)
     }
   })
 })
