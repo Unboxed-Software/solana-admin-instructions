@@ -3,9 +3,9 @@ use solana_program::{pubkey, pubkey::Pubkey};
 mod instructions;
 use instructions::*;
 
-declare_id!("DWiwuFozPXHW4KA5ijwcDgY88kJeXZ7WNUjfxZ6L4pJU");
+declare_id!("BC3RMBvVa88zSDzPXnBXxpnNYCrKsxnhR3HwwHhuKKei");
 
-pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("envgiPXWwmpkHFKdy4QLv2cypgAWmVTVEm71YbNpYRu");
+pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 #[program]
 pub mod config {

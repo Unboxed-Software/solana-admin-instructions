@@ -7,11 +7,6 @@ import { assert, expect } from "chai"
 import { execSync } from "child_process"
 const fs = require("fs")
 
-const deploy = () => {
-  const deployCmd = `solana program deploy --url localhost -v --program-id $(pwd)/target/deploy/config-keypair.json $(pwd)/target/deploy/config.so`
-  execSync(deployCmd)
-}
-
 describe("config", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env())
@@ -19,38 +14,17 @@ describe("config", () => {
   const wallet = anchor.workspace.Config.provider.wallet
 
   const program = anchor.workspace.Config as Program<Config>
-  const programDataAddress = findProgramAddressSync(
-    [program.programId.toBytes()],
-    new anchor.web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
-  )[0]
-
-  const programConfig = findProgramAddressSync(
-    [Buffer.from("program_config")],
-    program.programId
-  )[0]
 
   const sender = anchor.web3.Keypair.generate()
   const receiver = anchor.web3.Keypair.generate()
 
-  let mint: anchor.web3.PublicKey
   let feeDestination: anchor.web3.PublicKey
   let senderTokenAccount: anchor.web3.PublicKey
   let receiverTokenAccount: anchor.web3.PublicKey
 
   before(async () => {
-    let rawdata = fs.readFileSync(
-      "tests/keys/envgiPXWwmpkHFKdy4QLv2cypgAWmVTVEm71YbNpYRu.json"
-    )
-    let keyData = JSON.parse(rawdata)
-    let key = anchor.web3.Keypair.fromSecretKey(new Uint8Array(keyData))
-
-    mint = await spl.createMint(
-      connection,
-      wallet.payer,
-      wallet.publicKey,
-      null,
-      0,
-      key
+    const mint = new anchor.web3.PublicKey(
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
     )
 
     feeDestination = await spl.createAccount(
@@ -90,8 +64,6 @@ describe("config", () => {
       ),
       "confirmed"
     )
-
-    deploy()
   })
 
   it("Payment completes successfully", async () => {
