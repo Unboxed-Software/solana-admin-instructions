@@ -57,48 +57,52 @@ describe("config", () => {
       10000
     )
 
+    const transactionSignature = await connection.requestAirdrop(
+      sender.publicKey,
+      1 * anchor.web3.LAMPORTS_PER_SOL
+    )
+
+    const { blockhash, lastValidBlockHeight } =
+      await connection.getLatestBlockhash()
+
     await connection.confirmTransaction(
-      await connection.requestAirdrop(
-        sender.publicKey,
-        1 * anchor.web3.LAMPORTS_PER_SOL
-      ),
+      {
+        blockhash,
+        lastValidBlockHeight,
+        signature: transactionSignature,
+      },
       "confirmed"
     )
   })
 
   it("Payment completes successfully", async () => {
-    try {
-      const tx = await program.methods
-        .payment(new anchor.BN(10000))
-        .accounts({
-          feeDestination: feeDestination,
-          senderTokenAccount: senderTokenAccount,
-          receiverTokenAccount: receiverTokenAccount,
-          sender: sender.publicKey,
-        })
-        .transaction()
+    const tx = await program.methods
+      .payment(new anchor.BN(10000))
+      .accounts({
+        feeDestination: feeDestination,
+        senderTokenAccount: senderTokenAccount,
+        receiverTokenAccount: receiverTokenAccount,
+        sender: sender.publicKey,
+      })
+      .transaction()
 
-      await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
+    await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
 
-      assert.strictEqual(
-        (await connection.getTokenAccountBalance(senderTokenAccount)).value
-          .uiAmount,
-        0
-      )
+    assert.strictEqual(
+      (await connection.getTokenAccountBalance(senderTokenAccount)).value
+        .uiAmount,
+      0
+    )
 
-      assert.strictEqual(
-        (await connection.getTokenAccountBalance(feeDestination)).value
-          .uiAmount,
-        100
-      )
+    assert.strictEqual(
+      (await connection.getTokenAccountBalance(feeDestination)).value.uiAmount,
+      100
+    )
 
-      assert.strictEqual(
-        (await connection.getTokenAccountBalance(receiverTokenAccount)).value
-          .uiAmount,
-        9900
-      )
-    } catch (err) {
-      console.log(err)
-    }
+    assert.strictEqual(
+      (await connection.getTokenAccountBalance(receiverTokenAccount)).value
+        .uiAmount,
+      9900
+    )
   })
 })
