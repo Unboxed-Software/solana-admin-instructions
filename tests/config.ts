@@ -151,14 +151,12 @@ describe("config", () => {
 
   it("Update Program Config Account", async () => {
     const tx = await program.methods
-      .updateProgramConfig({
-        admin: wallet.publicKey,
-        feeDestination: feeDestination,
-        feeBasisPoints: new anchor.BN(200),
-      })
+      .updateProgramConfig(new anchor.BN(200))
       .accounts({
         programConfig: programConfig,
         admin: wallet.publicKey,
+        feeDestination: feeDestination,
+        newAdmin: wallet.publicKey,
       })
       .rpc()
 
@@ -177,6 +175,8 @@ describe("config", () => {
         .accounts({
           programConfig: programConfig,
           admin: sender.publicKey,
+          feeDestination: feeDestination,
+          newAdmin: sender.publicKey,
         })
         .transaction()
 

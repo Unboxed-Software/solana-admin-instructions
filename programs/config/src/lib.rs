@@ -3,7 +3,6 @@ use solana_program::{pubkey, pubkey::Pubkey};
 mod instructions;
 use instructions::*;
 mod state;
-use state::*;
 
 declare_id!("E6W4RLUxZLQN5mjVfTAv7hTrdLR5Y6nrNvFiW8p1Q1m");
 
