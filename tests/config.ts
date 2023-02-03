@@ -22,9 +22,26 @@ describe("config", () => {
   let senderTokenAccount: anchor.web3.PublicKey
   let receiverTokenAccount: anchor.web3.PublicKey
 
+  const programConfig = findProgramAddressSync(
+    [Buffer.from("program_config")],
+    program.programId
+  )[0]
+
   before(async () => {
-    const mint = new anchor.web3.PublicKey(
-      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    let data = fs.readFileSync(
+      "envK7QRnj5Vm7m7yrB2bTn8YUpM6AYFW7WW1NK8YgTY.json"
+    )
+    let keypair = anchor.web3.Keypair.fromSecretKey(
+      new Uint8Array(JSON.parse(data))
+    )
+
+    const mint = await spl.createMint(
+      connection,
+      wallet.payer,
+      wallet.publicKey,
+      null,
+      0,
+      keypair
     )
 
     feeDestination = await spl.createAccount(
@@ -75,10 +92,36 @@ describe("config", () => {
     )
   })
 
+  it("Initialize Program Config Account", async () => {
+    const tx = await program.methods
+      .initializeProgramConfig()
+      .accounts({
+        programConfig: programConfig,
+        feeDestination: feeDestination,
+        authority: wallet.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc()
+
+    assert.strictEqual(
+      (
+        await program.account.programConfig.fetch(programConfig)
+      ).feeBasisPoints.toNumber(),
+      100
+    )
+    assert.strictEqual(
+      (
+        await program.account.programConfig.fetch(programConfig)
+      ).admin.toString(),
+      wallet.publicKey.toString()
+    )
+  })
+
   it("Payment completes successfully", async () => {
     const tx = await program.methods
       .payment(new anchor.BN(10000))
       .accounts({
+        programConfig: programConfig,
         feeDestination: feeDestination,
         senderTokenAccount: senderTokenAccount,
         receiverTokenAccount: receiverTokenAccount,
@@ -104,5 +147,42 @@ describe("config", () => {
         .uiAmount,
       9900
     )
+  })
+
+  it("Update Program Config Account", async () => {
+    const tx = await program.methods
+      .updateProgramConfig({
+        admin: wallet.publicKey,
+        feeDestination: feeDestination,
+        feeBasisPoints: new anchor.BN(200),
+      })
+      .accounts({
+        programConfig: programConfig,
+        admin: wallet.publicKey,
+      })
+      .rpc()
+
+    assert.strictEqual(
+      (
+        await program.account.programConfig.fetch(programConfig)
+      ).feeBasisPoints.toNumber(),
+      200
+    )
+  })
+
+  it("Update Program Config Account with unauthorized admin (expect fail)", async () => {
+    try {
+      const tx = await program.methods
+        .updateProgramConfig(new anchor.BN(300))
+        .accounts({
+          programConfig: programConfig,
+          admin: sender.publicKey,
+        })
+        .transaction()
+
+      await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
+    } catch (err) {
+      expect(err)
+    }
   })
 })
