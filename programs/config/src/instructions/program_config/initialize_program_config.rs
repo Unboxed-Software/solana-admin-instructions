@@ -1,5 +1,5 @@
+use crate::program::Config;
 use crate::state::ProgramConfig;
-use crate::ADMIN;
 use crate::SEED_PROGRAM_CONFIG;
 use crate::USDC_MINT_PUBKEY;
 use anchor_lang::prelude::*;
@@ -11,7 +11,11 @@ pub struct InitializeProgramConfig<'info> {
     pub program_config: Account<'info, ProgramConfig>,
     #[account( token::mint = USDC_MINT_PUBKEY)]
     pub fee_destination: Account<'info, TokenAccount>,
-    #[account(mut, address = ADMIN)]
+    #[account(constraint = program.programdata_address()? == Some(program_data.key()))]
+    pub program: Program<'info, Config>,
+    #[account(constraint = program_data.upgrade_authority_address == Some(authority.key()))]
+    pub program_data: Account<'info, ProgramData>,
+    #[account(mut)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
 }

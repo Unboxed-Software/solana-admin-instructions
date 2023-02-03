@@ -27,6 +27,16 @@ describe("config", () => {
     program.programId
   )[0]
 
+  const programDataAddress = findProgramAddressSync(
+    [program.programId.toBytes()],
+    new anchor.web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
+  )[0]
+
+  const deploy = () => {
+    const deployCmd = `solana program deploy --url localhost -v --program-id $(pwd)/target/deploy/config-keypair.json $(pwd)/target/deploy/config.so`
+    execSync(deployCmd)
+  }
+
   before(async () => {
     let data = fs.readFileSync(
       "envK7QRnj5Vm7m7yrB2bTn8YUpM6AYFW7WW1NK8YgTY.json"
@@ -90,6 +100,8 @@ describe("config", () => {
       },
       "confirmed"
     )
+
+    deploy()
   })
 
   it("Initialize Program Config Account", async () => {
@@ -99,6 +111,8 @@ describe("config", () => {
         programConfig: programConfig,
         feeDestination: feeDestination,
         authority: wallet.publicKey,
+        program: program.programId,
+        programData: programDataAddress,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc()
