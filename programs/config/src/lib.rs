@@ -33,10 +33,7 @@ pub mod config {
         instructions::initialize_program_config_handler(ctx)
     }
 
-    pub fn update_program_config(
-        ctx: Context<UpdateProgramConfig>,
-        program_config: ProgramConfig,
-    ) -> Result<()> {
-        instructions::update_program_config_handler(ctx, program_config)
+    pub fn update_program_config(ctx: Context<UpdateProgramConfig>, new_fee: u64) -> Result<()> {
+        instructions::update_program_config_handler(ctx, new_fee)
     }
 }
