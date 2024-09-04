@@ -1,4 +1,5 @@
 use crate::state::AdminConfig;
+use crate::SEED_ADMIN_CONFIG;
 use crate::USDC_MINT_PUBKEY;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount};
@@ -6,7 +7,7 @@ use anchor_spl::token::{self, Token, TokenAccount};
 #[derive(Accounts)]
 pub struct Payment<'info> {
     #[account(
-        seeds = [b"admin"],
+        seeds = [SEED_ADMIN_CONFIG],
         bump,
         has_one = fee_destination
     )]

@@ -7,14 +7,17 @@ declare_id!("EkMrFPLyepdLUpEujQzuwTmbHKzAeaqXSXCf3JPKdULZ");
 
 #[cfg(feature = "local-testing")]
 #[constant]
-pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("WaoKNLQVDyBx388CfjaVeyNbs3MT2mPgAhoCfXyUvg8");
+pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("envdsQqsysKjFMcPSo34yPyjenZpaWg9J1TgtKMFgZp");
 
 #[cfg(not(feature = "local-testing"))]
 #[constant]
 pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 #[constant]
-pub const ADMIN_PUBKEY: Pubkey = pubkey!("DfLZV18rD7wCQwjYvhTFwuvLh49WSbXFeJFPQb5czifH");
+pub const SEED_ADMIN_CONFIG: &[u8] = b"admin_config";
+
+#[constant]
+pub const ADMIN_PUBKEY: Pubkey = pubkey!("CbcfaDHPwur22CzyWmzn6b4kBe3ntsw9Hu1UTWt9q33Y");
 
 #[program]
 pub mod config {

@@ -2,9 +2,9 @@ import * as anchor from "@coral-xyz/anchor";
 import * as spl from "@solana/spl-token";
 import { Program } from "@coral-xyz/anchor";
 import { Config } from "../target/types/config";
-import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pubkey";
 import { assert, expect } from "chai";
 import { execSync } from "child_process";
+import { PublicKey } from "@solana/web3.js";
 const fs = require("fs");
 
 const deploy = () => {
@@ -20,13 +20,13 @@ describe("config", () => {
   const wallet = anchor.workspace.Config.provider.wallet;
 
   const program = anchor.workspace.Config as Program<Config>;
-  const programDataAddress = findProgramAddressSync(
+  const programDataAddress = PublicKey.findProgramAddressSync(
     [program.programId.toBytes()],
     new anchor.web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
   )[0];
 
-  const adminConfig = findProgramAddressSync(
-    [Buffer.from("admin")],
+  const adminConfig = PublicKey.findProgramAddressSync(
+    [Buffer.from("admin_config")],
     program.programId
   )[0];
 
@@ -102,13 +102,11 @@ describe("config", () => {
     );
   });
 
-  it("Initialize Admin should be successfully", async () => {
+  it("Initialize Admin config should be successfully", async () => {
     const tx = await program.methods
       .initializeAdminConfig()
       .accounts({
         feeDestination: feeDestination,
-        authority: wallet.publicKey,
-        programData: programDataAddress,
       })
       .rpc();
 
@@ -163,8 +161,8 @@ describe("config", () => {
     const tx = await program.methods
       .updateAdminConfig(new anchor.BN(200))
       .accounts({
-        adminConfig: adminConfig,
-        admin: wallet.publicKey,
+        feeDestination: feeDestination,
+        newAdmin: sender.publicKey,
       })
       .rpc();
 
@@ -176,20 +174,23 @@ describe("config", () => {
     );
   });
 
-  it("Admin Config Update should throw an exception", async () => {
+  it("Admin Config Update with unauthorized admin should throw an exception", async () => {
     try {
       const tx = await program.methods
         .updateAdminConfig(new anchor.BN(300))
         .accounts({
-          adminConfig: adminConfig,
-          admin: sender.publicKey,
+          feeDestination: feeDestination,
+          newAdmin: sender.publicKey,
+          admin: sender.publicKey, //ignore an error on this line
         })
-        .transaction();
-
-      await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender]);
+        .signers([sender])
+        .rpc();
     } catch (err) {
       expect(err);
-      // console.log(err)
+      console.log(err.message);
+      return;
     }
+
+    assert.fail("should throw an exception");
   });
 });
