@@ -107,6 +107,7 @@ describe("config", () => {
       .initializeAdminConfig()
       .accounts({
         feeDestination: feeDestination,
+        programData: programDataAddress,
       })
       .rpc();
 
