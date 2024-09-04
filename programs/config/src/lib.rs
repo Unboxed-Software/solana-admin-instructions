@@ -7,7 +7,7 @@ declare_id!("EkMrFPLyepdLUpEujQzuwTmbHKzAeaqXSXCf3JPKdULZ");
 
 #[cfg(feature = "local-testing")]
 #[constant]
-pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("WaoKNLQVDyBx388CfjaVeyNbs3MT2mPgAhoCfXyUvg8");
+pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("envdsQqsysKjFMcPSo34yPyjenZpaWg9J1TgtKMFgZp");
 
 #[cfg(not(feature = "local-testing"))]
 #[constant]

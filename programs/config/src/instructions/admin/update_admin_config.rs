@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct UpdateAdminConfig<'info> {
-    #[account(mut, seeds = [b"admin"], bump)]
+    #[account(mut, seeds = [b"admin_config"], bump)]
     pub admin_config: Account<'info, AdminConfig>,
     #[account(
         mut,

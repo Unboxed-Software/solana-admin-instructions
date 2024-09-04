@@ -6,7 +6,7 @@ use anchor_spl::token::{self, Token, TokenAccount};
 #[derive(Accounts)]
 pub struct Payment<'info> {
     #[account(
-        seeds = [b"admin"],
+        seeds = [b"admin_config"],
         bump,
         has_one = fee_destination
     )]

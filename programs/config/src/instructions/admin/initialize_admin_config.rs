@@ -6,7 +6,7 @@ use anchor_spl::token::TokenAccount;
 
 #[derive(Accounts)]
 pub struct InitializeAdminConfig<'info> {
-    #[account(init, seeds = [b"admin"], bump, payer = authority, space = AdminConfig::LEN)]
+    #[account(init, seeds = [b"admin_config"], bump, payer = authority, space = AdminConfig::LEN)]
     pub admin_config: Account<'info, AdminConfig>,
     #[account( token::mint = USDC_MINT_PUBKEY)]
     pub fee_destination: Account<'info, TokenAccount>,
