@@ -1,10 +1,9 @@
 use anchor_lang::prelude::*;
-use solana_program::{pubkey, pubkey::Pubkey};
 mod instructions;
 mod state;
 use instructions::*;
 
-declare_id!("G839pmstFmKKGEVXRGnauXxFgzucvELrzuyk6gHTiK7a");
+declare_id!("EkMrFPLyepdLUpEujQzuwTmbHKzAeaqXSXCf3JPKdULZ");
 
 #[cfg(feature = "local-testing")]
 #[constant]

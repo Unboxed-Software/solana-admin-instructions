@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
+const DISCRIMINATOR_SIZE: usize = 8;
+
 #[account]
+#[derive(InitSpace)]
 pub struct AdminConfig {
     pub admin: Pubkey,
     pub fee_destination: Pubkey,
@@ -8,5 +11,5 @@ pub struct AdminConfig {
 }
 
 impl AdminConfig {
-    pub const LEN: usize = 8 + 32 + 32 + 8;
+    pub const LEN: usize = DISCRIMINATOR_SIZE + AdminConfig::INIT_SPACE;
 }
