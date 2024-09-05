@@ -1,9 +1,16 @@
+use crate::state::AdminConfig;
 use crate::USDC_MINT_PUBKEY;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount};
 
 #[derive(Accounts)]
 pub struct Payment<'info> {
+    #[account(
+        seeds = [b"admin_config"],
+        bump,
+        has_one = fee_destination
+    )]
+    pub admin_config: Account<'info, AdminConfig>,
     #[account(
         mut,
         token::mint = USDC_MINT_PUBKEY
@@ -25,7 +32,11 @@ pub struct Payment<'info> {
 }
 
 pub fn payment_handler(ctx: Context<Payment>, amount: u64) -> Result<()> {
-    let fee_amount = amount.checked_mul(100).unwrap().checked_div(10000).unwrap();
+    let fee_amount = amount
+        .checked_mul(ctx.accounts.admin_config.fee_basis_points)
+        .unwrap()
+        .checked_div(10000)
+        .unwrap();
     let remaining_amount = amount.checked_sub(fee_amount).unwrap();
 
     msg!("Amount: {}", amount);
