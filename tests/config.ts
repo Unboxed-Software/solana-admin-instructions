@@ -1,69 +1,80 @@
-import * as anchor from "@project-serum/anchor"
-import * as spl from "@solana/spl-token"
-import { Program } from "@project-serum/anchor"
-import { Config } from "../target/types/config"
-import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pubkey"
-import { assert, expect } from "chai"
-import { execSync } from "child_process"
-const fs = require("fs")
+import * as anchor from "@coral-xyz/anchor";
+import * as spl from "@solana/spl-token";
+import { Program } from "@coral-xyz/anchor";
+import { Config } from "../target/types/config";
+import { assert, expect } from "chai";
+import { execSync } from "child_process";
+import { PublicKey } from "@solana/web3.js";
+const fs = require("fs");
+
+const deploy = () => {
+  const deployCmd = `solana program deploy --url localhost -v --program-id $(pwd)/target/deploy/config-keypair.json $(pwd)/target/deploy/config.so`;
+  execSync(deployCmd);
+};
 
 describe("config", () => {
+  deploy();
   // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env())
-  const connection = anchor.getProvider().connection
-  const wallet = anchor.workspace.Config.provider.wallet
+  anchor.setProvider(anchor.AnchorProvider.env());
+  const connection = anchor.getProvider().connection;
+  const wallet = anchor.workspace.Config.provider.wallet;
 
-  const program = anchor.workspace.Config as Program<Config>
+  const program = anchor.workspace.Config as Program<Config>;
+  const programDataAddress = PublicKey.findProgramAddressSync(
+    [program.programId.toBytes()],
+    new anchor.web3.PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
+  )[0];
 
-  const sender = anchor.web3.Keypair.generate()
-  const receiver = anchor.web3.Keypair.generate()
-
-  let feeDestination: anchor.web3.PublicKey
-  let senderTokenAccount: anchor.web3.PublicKey
-  let receiverTokenAccount: anchor.web3.PublicKey
-
-  const programConfig = findProgramAddressSync(
-    [Buffer.from("program_config")],
+  const adminConfig = PublicKey.findProgramAddressSync(
+    [Buffer.from("admin_config")],
     program.programId
-  )[0]
+  )[0];
+
+  const tokenAccount = anchor.web3.Keypair.generate();
+
+  const sender = anchor.web3.Keypair.generate();
+  const receiver = anchor.web3.Keypair.generate();
+
+  let mint: anchor.web3.PublicKey;
+  let feeDestination: anchor.web3.PublicKey;
+  let senderTokenAccount: anchor.web3.PublicKey;
+  let receiverTokenAccount: anchor.web3.PublicKey;
 
   before(async () => {
-    let data = fs.readFileSync(
-      "envK7QRnj5Vm7m7yrB2bTn8YUpM6AYFW7WW1NK8YgTY.json"
-    )
-    let keypair = anchor.web3.Keypair.fromSecretKey(
-      new Uint8Array(JSON.parse(data))
-    )
-
-    const mint = await spl.createMint(
+    let rawdata = fs.readFileSync(
+      "tests/keys/test-WaoKNLQVDyBx388CfjaVeyNbs3MT2mPgAhoCfXyUvg8.json"
+    );
+    let keyData = JSON.parse(rawdata);
+    let key = anchor.web3.Keypair.fromSecretKey(new Uint8Array(keyData));
+    mint = await spl.createMint(
       connection,
       wallet.payer,
       wallet.publicKey,
       null,
       0,
-      keypair
-    )
+      key
+    );
 
     feeDestination = await spl.createAccount(
       connection,
       wallet.payer,
       mint,
       wallet.publicKey
-    )
+    );
 
     senderTokenAccount = await spl.createAccount(
       connection,
       wallet.payer,
       mint,
       sender.publicKey
-    )
+    );
 
     receiverTokenAccount = await spl.createAccount(
       connection,
       wallet.payer,
       mint,
       receiver.publicKey
-    )
+    );
 
     await spl.mintTo(
       connection,
@@ -72,117 +83,115 @@ describe("config", () => {
       senderTokenAccount,
       wallet.payer,
       10000
-    )
+    );
 
-    const transactionSignature = await connection.requestAirdrop(
+    const airdropSignature = await connection.requestAirdrop(
       sender.publicKey,
       1 * anchor.web3.LAMPORTS_PER_SOL
-    )
+    );
 
-    const { blockhash, lastValidBlockHeight } =
-      await connection.getLatestBlockhash()
+    const latestBlockHash = await connection.getLatestBlockhash();
 
     await connection.confirmTransaction(
       {
-        blockhash,
-        lastValidBlockHeight,
-        signature: transactionSignature,
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature: airdropSignature,
       },
       "confirmed"
-    )
-  })
+    );
+  });
 
-  it("Initialize Program Config Account", async () => {
+  it("Initialize Admin config should be successfully", async () => {
     const tx = await program.methods
-      .initializeProgramConfig()
+      .initializeAdminConfig()
       .accounts({
-        programConfig: programConfig,
         feeDestination: feeDestination,
-        authority: wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
+        programData: programDataAddress,
       })
-      .rpc()
+      .rpc();
 
     assert.strictEqual(
       (
-        await program.account.programConfig.fetch(programConfig)
+        await program.account.adminConfig.fetch(adminConfig)
       ).feeBasisPoints.toNumber(),
       100
-    )
+    );
     assert.strictEqual(
-      (
-        await program.account.programConfig.fetch(programConfig)
-      ).admin.toString(),
+      (await program.account.adminConfig.fetch(adminConfig)).admin.toString(),
       wallet.publicKey.toString()
-    )
-  })
+    );
+  });
 
-  it("Payment completes successfully", async () => {
-    const tx = await program.methods
-      .payment(new anchor.BN(10000))
-      .accounts({
-        programConfig: programConfig,
-        feeDestination: feeDestination,
-        senderTokenAccount: senderTokenAccount,
-        receiverTokenAccount: receiverTokenAccount,
-        sender: sender.publicKey,
-      })
-      .transaction()
-
-    await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
-
-    assert.strictEqual(
-      (await connection.getTokenAccountBalance(senderTokenAccount)).value
-        .uiAmount,
-      0
-    )
-
-    assert.strictEqual(
-      (await connection.getTokenAccountBalance(feeDestination)).value.uiAmount,
-      100
-    )
-
-    assert.strictEqual(
-      (await connection.getTokenAccountBalance(receiverTokenAccount)).value
-        .uiAmount,
-      9900
-    )
-  })
-
-  it("Update Program Config Account", async () => {
-    const tx = await program.methods
-      .updateProgramConfig(new anchor.BN(200))
-      .accounts({
-        programConfig: programConfig,
-        admin: wallet.publicKey,
-        feeDestination: feeDestination,
-        newAdmin: wallet.publicKey,
-      })
-      .rpc()
-
-    assert.strictEqual(
-      (
-        await program.account.programConfig.fetch(programConfig)
-      ).feeBasisPoints.toNumber(),
-      200
-    )
-  })
-
-  it("Update Program Config Account with unauthorized admin (expect fail)", async () => {
+  it("Payment should complete successfully", async () => {
     try {
       const tx = await program.methods
-        .updateProgramConfig(new anchor.BN(300))
+        .payment(new anchor.BN(10000))
         .accounts({
-          programConfig: programConfig,
-          admin: sender.publicKey,
+          senderTokenAccount: senderTokenAccount,
+          receiverTokenAccount: receiverTokenAccount,
+          sender: sender.publicKey,
+        })
+        .transaction();
+
+      await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender]);
+
+      assert.strictEqual(
+        (await connection.getTokenAccountBalance(senderTokenAccount)).value
+          .uiAmount,
+        0
+      );
+
+      assert.strictEqual(
+        (await connection.getTokenAccountBalance(feeDestination)).value
+          .uiAmount,
+        100
+      );
+
+      assert.strictEqual(
+        (await connection.getTokenAccountBalance(receiverTokenAccount)).value
+          .uiAmount,
+        9900
+      );
+    } catch (err) {
+      assert.fail(err);
+    }
+  });
+
+  it("Admin Config Update should be successfully", async () => {
+    const tx = await program.methods
+      .updateAdminConfig(new anchor.BN(200))
+      .accounts({
+        feeDestination: feeDestination,
+        newAdmin: sender.publicKey,
+      })
+      .rpc();
+
+    assert.strictEqual(
+      (
+        await program.account.adminConfig.fetch(adminConfig)
+      ).feeBasisPoints.toNumber(),
+      200
+    );
+  });
+
+  it("Admin Config Update with unauthorized admin should throw an exception", async () => {
+    try {
+      const tx = await program.methods
+        .updateAdminConfig(new anchor.BN(300))
+        .accounts({
           feeDestination: feeDestination,
           newAdmin: sender.publicKey,
+          admin: sender.publicKey, //ignore an error on this line
         })
-        .transaction()
-
-      await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
+        .signers([sender])
+        .rpc();
     } catch (err) {
-      expect(err)
+      expect(err);
+      console.log(err.message);
+      return;
     }
-  })
-})
+
+    assert.fail("should throw an exception");
+  });
+});
