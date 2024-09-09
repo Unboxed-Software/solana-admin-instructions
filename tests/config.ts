@@ -1,108 +1,101 @@
-import * as anchor from "@project-serum/anchor"
-import * as spl from "@solana/spl-token"
-import { Program } from "@project-serum/anchor"
-import { Config } from "../target/types/config"
-import { findProgramAddressSync } from "@project-serum/anchor/dist/cjs/utils/pubkey"
-import { assert, expect } from "chai"
-import { execSync } from "child_process"
-const fs = require("fs")
+import * as anchor from "@coral-xyz/anchor";
+import { createAccount, mintTo, getAccount } from "@solana/spl-token";
+import { Program } from "@coral-xyz/anchor";
+import { Config } from "../target/types/config";
+import { expect } from "chai";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { airdropIfRequired } from "@solana-developers/helpers";
+import { execSync } from "child_process";
+import fs from "fs";
 
-describe("config", () => {
-  // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env())
-  const connection = anchor.getProvider().connection
-  const wallet = anchor.workspace.Config.provider.wallet
+describe("Config", () => {
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
 
-  const program = anchor.workspace.Config as Program<Config>
+  const program = anchor.workspace.Config as Program<Config>;
+  const connection = provider.connection;
+  const walletAuthority = provider.wallet as anchor.Wallet;
 
-  const sender = anchor.web3.Keypair.generate()
-  const receiver = anchor.web3.Keypair.generate()
+  const sender = anchor.web3.Keypair.generate();
+  const receiver = anchor.web3.Keypair.generate();
 
-  let feeDestination: anchor.web3.PublicKey
-  let senderTokenAccount: anchor.web3.PublicKey
-  let receiverTokenAccount: anchor.web3.PublicKey
+  let feeDestination: PublicKey;
+  let senderTokenAccount: PublicKey;
+  let receiverTokenAccount: PublicKey;
+
+  const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+  const INITIAL_SENDER_BALANCE = 10000;
+  const PAYMENT_AMOUNT = 10000;
+  const FEE_PERCENTAGE = 0.01; // 1%
 
   before(async () => {
-    const mint = new anchor.web3.PublicKey(
-      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    )
+    try {
+      feeDestination = await createAccount(
+        connection,
+        walletAuthority.payer,
+        USDC_MINT,
+        walletAuthority.publicKey
+      );
 
-    feeDestination = await spl.createAccount(
-      connection,
-      wallet.payer,
-      mint,
-      wallet.publicKey
-    )
+      senderTokenAccount = await createAccount(
+        connection,
+        walletAuthority.payer,
+        USDC_MINT,
+        sender.publicKey
+      );
 
-    senderTokenAccount = await spl.createAccount(
-      connection,
-      wallet.payer,
-      mint,
-      sender.publicKey
-    )
+      receiverTokenAccount = await createAccount(
+        connection,
+        walletAuthority.payer,
+        USDC_MINT,
+        receiver.publicKey
+      );
 
-    receiverTokenAccount = await spl.createAccount(
-      connection,
-      wallet.payer,
-      mint,
-      receiver.publicKey
-    )
+      await mintTo(
+        connection,
+        walletAuthority.payer,
+        USDC_MINT,
+        senderTokenAccount,
+        walletAuthority.payer,
+        INITIAL_SENDER_BALANCE
+      );
 
-    await spl.mintTo(
-      connection,
-      wallet.payer,
-      mint,
-      senderTokenAccount,
-      wallet.payer,
-      10000
-    )
+      await airdropIfRequired(
+        connection,
+        sender.publicKey,
+        1 * LAMPORTS_PER_SOL,
+        0.5 * LAMPORTS_PER_SOL
+      );
+    } catch (error) {
+      console.error("Setup failed:", error);
+      throw error;
+    }
+  });
 
-    const transactionSignature = await connection.requestAirdrop(
-      sender.publicKey,
-      1 * anchor.web3.LAMPORTS_PER_SOL
-    )
+  it("completes payment successfully", async () => {
+    try {
+      const transaction = await program.methods
+        .payment(new anchor.BN(PAYMENT_AMOUNT))
+        .accounts({
+          feeDestination: feeDestination,
+          senderTokenAccount: senderTokenAccount,
+          receiverTokenAccount: receiverTokenAccount,
+          sender: sender.publicKey,
+        })
+        .transaction();
 
-    const { blockhash, lastValidBlockHeight } =
-      await connection.getLatestBlockhash()
+      await anchor.web3.sendAndConfirmTransaction(connection, transaction, [sender]);
 
-    await connection.confirmTransaction(
-      {
-        blockhash,
-        lastValidBlockHeight,
-        signature: transactionSignature,
-      },
-      "confirmed"
-    )
-  })
+      const senderBalance = await getAccount(connection, senderTokenAccount);
+      const feeDestinationBalance = await getAccount(connection, feeDestination);
+      const receiverBalance = await getAccount(connection, receiverTokenAccount);
 
-  it("Payment completes successfully", async () => {
-    const tx = await program.methods
-      .payment(new anchor.BN(10000))
-      .accounts({
-        feeDestination: feeDestination,
-        senderTokenAccount: senderTokenAccount,
-        receiverTokenAccount: receiverTokenAccount,
-        sender: sender.publicKey,
-      })
-      .transaction()
-
-    await anchor.web3.sendAndConfirmTransaction(connection, tx, [sender])
-
-    assert.strictEqual(
-      (await connection.getTokenAccountBalance(senderTokenAccount)).value
-        .uiAmount,
-      0
-    )
-
-    assert.strictEqual(
-      (await connection.getTokenAccountBalance(feeDestination)).value.uiAmount,
-      100
-    )
-
-    assert.strictEqual(
-      (await connection.getTokenAccountBalance(receiverTokenAccount)).value
-        .uiAmount,
-      9900
-    )
-  })
-})
+      expect(Number(senderBalance.amount)).to.equal(0);
+      expect(Number(feeDestinationBalance.amount)).to.equal(PAYMENT_AMOUNT * FEE_PERCENTAGE);
+      expect(Number(receiverBalance.amount)).to.equal(PAYMENT_AMOUNT * (1 - FEE_PERCENTAGE));
+    } catch (error) {
+      console.error("Payment failed:", error);
+      throw error;
+    }
+  });
+});

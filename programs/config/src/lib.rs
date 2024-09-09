@@ -1,9 +1,8 @@
 use anchor_lang::prelude::*;
-use solana_program::{pubkey, pubkey::Pubkey};
 mod instructions;
 use instructions::*;
 
-declare_id!("BC3RMBvVa88zSDzPXnBXxpnNYCrKsxnhR3HwwHhuKKei");
+declare_id!("FF3eGbZnharYruJNwRV7jqnDYvpLkyvgbSv5gsGbJHps");
 
 pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
