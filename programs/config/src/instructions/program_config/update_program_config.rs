@@ -1,6 +1,5 @@
 use crate::state::ProgramConfig;
-use crate::SEED_PROGRAM_CONFIG;
-use crate::USDC_MINT_PUBKEY;
+use crate::{SEED_PROGRAM_CONFIG, USDC_MINT_PUBKEY};
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
@@ -8,12 +7,9 @@ use anchor_spl::token::TokenAccount;
 pub struct UpdateProgramConfig<'info> {
     #[account(mut, seeds = [SEED_PROGRAM_CONFIG], bump)]
     pub program_config: Account<'info, ProgramConfig>,
-    #[account( token::mint = USDC_MINT_PUBKEY)]
+    #[account(token::mint = USDC_MINT_PUBKEY)]
     pub fee_destination: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        address = program_config.admin,
-    )]
+    #[account(mut, address = program_config.admin)]
     pub admin: Signer<'info>,
     /// CHECK: arbitrarily assigned by existing admin
     pub new_admin: UncheckedAccount<'info>,
