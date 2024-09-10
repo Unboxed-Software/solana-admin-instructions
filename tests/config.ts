@@ -30,10 +30,10 @@ describe("Config", () => {
   let tokenMint: PublicKey;
 
   const PROGRAM_CONFIG_SEED = "program_config";
-  const [programConfig] = PublicKey.findProgramAddressSync(
+  const programConfig = PublicKey.findProgramAddressSync(
     [Buffer.from(PROGRAM_CONFIG_SEED)],
     program.programId
-  );
+  )[0];
 
   const INITIAL_SENDER_BALANCE = 10000;
   const PAYMENT_AMOUNT = 10000;

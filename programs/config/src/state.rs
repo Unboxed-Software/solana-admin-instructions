@@ -7,4 +7,3 @@ pub struct ProgramConfig {
     pub fee_destination: Pubkey,
     pub fee_basis_points: u64,
 }
-
