@@ -19,8 +19,10 @@ pub fn update_program_config_handler(
     ctx: Context<UpdateProgramConfig>,
     new_fee: u64,
 ) -> Result<()> {
-    ctx.accounts.program_config.admin = ctx.accounts.new_admin.key();
-    ctx.accounts.program_config.fee_destination = ctx.accounts.fee_destination.key();
-    ctx.accounts.program_config.fee_basis_points = new_fee;
+    ctx.accounts.program_config.set_inner(ProgramConfig {
+        admin: ctx.accounts.new_admin.key(),
+        fee_destination: ctx.accounts.fee_destination.key(),
+        fee_basis_points: new_fee,
+    });
     Ok(())
 }
