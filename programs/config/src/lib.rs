@@ -1,10 +1,9 @@
 use anchor_lang::prelude::*;
-use solana_program::{pubkey, pubkey::Pubkey};
 mod instructions;
 use instructions::*;
 mod state;
 
-declare_id!("E6W4RLUxZLQN5mjVfTAv7hTrdLR5Y6nrNvFiW8p1Q1m");
+declare_id!("FF3eGbZnharYruJNwRV7jqnDYvpLkyvgbSv5gsGbJHps");
 
 #[cfg(not(feature = "local-testing"))]
 #[constant]
@@ -12,9 +11,12 @@ pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEG
 
 #[cfg(feature = "local-testing")]
 #[constant]
-pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("envK7QRnj5Vm7m7yrB2bTn8YUpM6AYFW7WW1NK8YgTY");
+pub const USDC_MINT_PUBKEY: Pubkey = pubkey!("envYcAnc9BvWEqDy4VKJsiECCbbc72Fynz87rBih6DV");
 
 pub const SEED_PROGRAM_CONFIG: &[u8] = b"program_config";
+
+#[constant]
+pub const ADMIN: Pubkey = pubkey!("GprrWv9r8BMxQiWea9MrbCyK7ig7Mj8CcseEbJhDDZXM");
 
 #[program]
 pub mod config {
