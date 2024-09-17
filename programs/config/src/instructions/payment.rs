@@ -25,8 +25,18 @@ pub struct Payment<'info> {
 }
 
 pub fn payment_handler(ctx: Context<Payment>, amount: u64) -> Result<()> {
-    let fee_amount = amount.checked_mul(100).unwrap().checked_div(10000).unwrap();
-    let remaining_amount = amount.checked_sub(fee_amount).unwrap();
+    const FEE_PERCENTAGE: u64 = 100; // 1%
+    const BASIS_POINTS: u64 = 10000;
+
+    let fee_amount = amount
+        .checked_mul(FEE_PERCENTAGE)
+        .ok_or(ProgramError::ArithmeticOverflow)?
+        .checked_div(BASIS_POINTS)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+
+    let remaining_amount = amount
+        .checked_sub(fee_amount)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
 
     msg!("Amount: {}", amount);
     msg!("Fee Amount: {}", fee_amount);
